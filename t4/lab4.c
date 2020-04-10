@@ -33,6 +33,10 @@ Node* createNode(char* str) {
 	node->next = NULL;
 	size_t length = strlen(str);
 	node->data = strdup(str);
+	if(node->data == NULL) {
+	    free(node);
+	    return NULL;
+	}
 	return node;
 }
 
