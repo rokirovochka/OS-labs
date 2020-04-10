@@ -46,8 +46,7 @@ void pushBack(List* list, Node* node) {
 		list->head = node;
 		return;
 	}
-	Node* tmp = createNode("");
-	tmp = list->head;
+	Node* tmp = list->head;
 	while (tmp->next != NULL) {
 		tmp = tmp->next;
 	}
@@ -65,9 +64,7 @@ void printList(List* list) {
 }
 
 void removeList(List* list) {
-	Node* tmp = createNode("");
-	Node* p = createNode("");
-	tmp = list->head;
+	Node* tmp = list->head,p;
 	while (tmp != NULL) {
 		p = tmp;
 		tmp = tmp->next;
