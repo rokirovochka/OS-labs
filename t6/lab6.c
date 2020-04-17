@@ -36,6 +36,7 @@ Line* buildTable(int fdesc, int *curLine) {
                                 Line *newLines = realloc(lines, maxLines);
                                 if (newLines == NULL) {
                                         perror("realloc failed");
+					free(lines);
                                         return NULL;
                                 }
                                 lines = newLines;
@@ -126,6 +127,7 @@ int main(int argc, char **argv) {
                 }
                 if (lseek(fdesc, lines[idx - 1].offset, SEEK_SET) == -1) {
                         perror("lseek failed");
+			free(lines);
                         return -1;
                 }
                 int n;
@@ -140,7 +142,7 @@ int main(int argc, char **argv) {
         } while (1);
 
         free(lines);
-        if(close(fdesc)){
+        if(close(fdesc)) {
                 perror("closing file failed");
                 return -1;
         }

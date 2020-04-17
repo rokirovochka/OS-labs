@@ -76,7 +76,10 @@ char *createMappedFile(char *fileName, off_t *fileLen) {
                 perror("mmap failed");
                 return NULL;
         }
-        close(desc);
+        if(close(desc)) {
+		perror("closing file failed");
+		return NULL;
+	}
         return mappedFile;
 }
 
