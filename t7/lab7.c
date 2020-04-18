@@ -9,12 +9,11 @@
 #include <sys/mman.h>
 #define BUFFER_SIZE 256
 #define min(x,y) (x<y?x:y)
-typedef struct Line Line;
-struct Line {
+
+typedef struct Line {
         int len;
         int offset;
-};
-
+}Line;
 
 Line* buildTable(char *file, off_t fileLen, int *curLine) {
         int maxLines = 256;
@@ -57,7 +56,6 @@ void printTable(Line* lines, int linesCnt) {
         }
 }
 
-
 char *createMappedFile(char *fileName, off_t *fileLen) {
         int desc = open(fileName, O_RDONLY);
         if(desc == -1) {
@@ -66,13 +64,19 @@ char *createMappedFile(char *fileName, off_t *fileLen) {
         }
         *fileLen = lseek(desc, 0, SEEK_END);
         if(*fileLen == - 1) {
-                close(desc);
+		if(close(desc)) {
+                	perror("closing file failed");
+                	return NULL;
+        	}
                 perror("lseek failed");
                 return NULL;
         }
         char *mappedFile = mmap(NULL, *fileLen, PROT_READ, MAP_PRIVATE, desc, 0);
         if(mappedFile == MAP_FAILED) {
-                close(desc);
+                if(close(desc)) {
+                	perror("closing file failed");
+                	return NULL;
+        	}
                 perror("mmap failed");
                 return NULL;
         }
@@ -84,10 +88,10 @@ char *createMappedFile(char *fileName, off_t *fileLen) {
 }
 
 int main(int argc, char **argv) {
-        if(argc < 2) {
-                fprintf(stderr, "need filename\n");
-                return -1;
-        }
+        if (argc < 2) {
+		fprintf(stderr, "usage: ./lab7.exe filename\n");
+		return -1;
+	}
         off_t fileLen = 0;
         char* mappedFile = createMappedFile(argv[1], &fileLen);
         if(mappedFile == NULL) {

@@ -27,7 +27,17 @@ Line* buildTable(int fdesc, int *curLine) {
 	char c;
 	char recvBuffer[BUFFER_SIZE];
 	int n;
-	while ((n = read(fdesc, recvBuffer, sizeof(char) * BUFFER_SIZE)) > 0) {
+	while (1) {
+		if((n = read(fdesc, recvBuffer, sizeof(char) * BUFFER_SIZE)) <= 0 && errno != EINTR) {
+			break;
+		}
+		while(errno == EINTR) {
+			sleep(1);
+			n = read(fdesc, recvBuffer, sizeof(char) * BUFFER_SIZE);
+		}
+		if(n <= 0) {
+			break;
+		}
 		for (int i = 0; i < n; i++) {
 			c = recvBuffer[i];
 			if (*curLine + 1 == maxLines) {
@@ -60,7 +70,7 @@ void printTable(Line* lines, int linesCnt) {
 
 int main(int argc, char **argv) {
 	if (argc < 2) {
-		fprintf(stderr, "filename needed\n");
+		fprintf(stderr, "usage: ./lab5.exe filename\n");
 		return -1;
 	}
 
@@ -72,6 +82,10 @@ int main(int argc, char **argv) {
 	int linesCnt = 0;
 	Line* lines = buildTable(fdesc, &linesCnt);
 	if (lines == NULL) {
+		if(close(fdesc)) {
+			perror("closing file failed");
+			return -1;
+		}
 		return -1;
 	}
 	printf("lines = %d\n", linesCnt);
@@ -98,24 +112,39 @@ int main(int argc, char **argv) {
 		if (lseek(fdesc, lines[idx - 1].offset, SEEK_SET) == -1) {
 			perror("lseek failed");
 			free(lines);
+			if(close(fdesc)) {
+				perror("closing file failed");
+				return -1;
+			}
 			return -1;
 		}
 		int n;
 		int rest = lines[idx - 1].len;
 
-		while ((n = read(fdesc, recvBuffer, min(BUFFER_SIZE, rest))) > 0) {
-			for (int i = 0; i < n; i++) {
-				printf("%c", recvBuffer[i]);
+		while (1) {
+			if((n = read(fdesc, recvBuffer, min(BUFFER_SIZE, rest))) <= 0 && errno != EINTR) {
+				break;
 			}
-			rest -= n;
-		}
-	} while (1);
+			while(errno == EINTR) {
+				sleep(1);
+				n = read(fdesc, recvBuffer, min(BUFFER_SIZE, rest));
+			}
+			if(n <= 0) {
+				break;
+			}
 
-	free(lines);
-	if(close(fdesc)){
-		perror("closing file failed");
-		return -1;
-	}
-	return 0;
+                        for (int i = 0; i < n; i++) {
+                                printf("%c", recvBuffer[i]);
+                        }
+                        rest -= n;
+                }
+        } while (1);
+
+        free(lines);
+        if(close(fdesc)) {
+                perror("closing file failed");
+                return -1;
+        }
+        return 0;
 }
 
