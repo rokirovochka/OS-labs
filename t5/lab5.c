@@ -28,16 +28,14 @@ Line* buildTable(int fdesc, int *curLine) {
 	char recvBuffer[BUFFER_SIZE];
 	int n;
 	while (1) {
-		if((n = read(fdesc, recvBuffer, sizeof(char) * BUFFER_SIZE)) <= 0 && errno != EINTR) {
+		if ((n = read(fdesc, recvBuffer, sizeof(char) * BUFFER_SIZE)) <= 0) {
+			if (errno == EINTR) {
+				errno = 0;
+				continue;
+			}
 			break;
 		}
-		while(errno == EINTR) {
-			sleep(1);
-			n = read(fdesc, recvBuffer, sizeof(char) * BUFFER_SIZE);
-		}
-		if(n <= 0) {
-			break;
-		}
+
 		for (int i = 0; i < n; i++) {
 			c = recvBuffer[i];
 			if (*curLine + 1 == maxLines) {
@@ -82,7 +80,7 @@ int main(int argc, char **argv) {
 	int linesCnt = 0;
 	Line* lines = buildTable(fdesc, &linesCnt);
 	if (lines == NULL) {
-		if(close(fdesc)) {
+		if (close(fdesc)) {
 			perror("closing file failed");
 			return -1;
 		}
@@ -102,7 +100,7 @@ int main(int argc, char **argv) {
 			continue;
 		}
 		if (idx > linesCnt) {
-			fprintf(stderr, "number should be <= %d\n",linesCnt);
+			fprintf(stderr, "number should be <= %d\n", linesCnt);
 			continue;
 		}
 		if (idx == 0) {
@@ -112,7 +110,7 @@ int main(int argc, char **argv) {
 		if (lseek(fdesc, lines[idx - 1].offset, SEEK_SET) == -1) {
 			perror("lseek failed");
 			free(lines);
-			if(close(fdesc)) {
+			if (close(fdesc)) {
 				perror("closing file failed");
 				return -1;
 			}
@@ -122,29 +120,26 @@ int main(int argc, char **argv) {
 		int rest = lines[idx - 1].len;
 
 		while (1) {
-			if((n = read(fdesc, recvBuffer, min(BUFFER_SIZE, rest))) <= 0 && errno != EINTR) {
-				break;
-			}
-			while(errno == EINTR) {
-				sleep(1);
-				n = read(fdesc, recvBuffer, min(BUFFER_SIZE, rest));
-			}
-			if(n <= 0) {
+			if ((n = read(fdesc, recvBuffer, min(BUFFER_SIZE, rest))) <= 0) {
+				if (errno == EINTR) {
+					errno = 0;
+					continue;
+				}
 				break;
 			}
 
-                        for (int i = 0; i < n; i++) {
-                                printf("%c", recvBuffer[i]);
-                        }
-                        rest -= n;
-                }
-        } while (1);
+			for (int i = 0; i < n; i++) {
+				printf("%c", recvBuffer[i]);
+			}
+			rest -= n;
+		}
+	} while (1);
 
-        free(lines);
-        if(close(fdesc)) {
-                perror("closing file failed");
-                return -1;
-        }
-        return 0;
+	free(lines);
+	if (close(fdesc)) {
+		perror("closing file failed");
+		return -1;
+	}
+	return 0;
 }
 

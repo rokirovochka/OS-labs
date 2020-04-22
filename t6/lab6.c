@@ -29,16 +29,14 @@ Line* buildTable(int fdesc, int *curLine) {
 	char recvBuffer[BUFFER_SIZE];
 	int n;
 	while (1) {
-		if((n = read(fdesc, recvBuffer, sizeof(char) * BUFFER_SIZE)) <= 0 && errno != EINTR) {
+		if ((n = read(fdesc, recvBuffer, sizeof(char) * BUFFER_SIZE)) <= 0) {
+			if (errno == EINTR) {
+				errno = 0;
+				continue;
+			}
 			break;
 		}
-		while(errno == EINTR) {
-			sleep(1);
-			n = read(fdesc, recvBuffer, sizeof(char) * BUFFER_SIZE);
-		}
-		if(n <= 0) {
-			break;
-		}
+
 		for (int i = 0; i < n; i++) {
 			c = recvBuffer[i];
 			if (*curLine + 1 == maxLines) {
@@ -83,7 +81,7 @@ int main(int argc, char **argv) {
 	int linesCnt = 0;
 	Line* lines = buildTable(fdesc, &linesCnt);
 	if (lines == NULL) {
-		if(close(fdesc)) {
+		if (close(fdesc)) {
 			perror("closing file failed");
 			return -1;
 		}
@@ -96,98 +94,92 @@ int main(int argc, char **argv) {
 	int idx = 0;
 
 
-        struct pollfd fds[1];
-        fds[0].fd = 0;
-        fds[0].events = POLLIN;
-        int n;
+	struct pollfd fds[1];
+	fds[0].fd = 0;
+	fds[0].events = POLLIN;
+	int n;
 
-        do {
-                printf("enter line number:\n");
+	do {
+		printf("enter line number:\n");
 
-                int ready = poll(fds, 1, 5000);
-                if(ready == -1) {
-                        perror("poll failed");
-                        break;
-                }
-                if(ready == 0) {
-                        printf("timeout\n");
+		int ready = poll(fds, 1, 5000);
+		if (ready == -1) {
+			perror("poll failed");
+			break;
+		}
+		if (ready == 0) {
+			printf("timeout\n");
 
-                        if(lseek(fdesc, 0, SEEK_SET) == -1) {
-                                perror("lseek failed");
-                                break;
-                        }
+			if (lseek(fdesc, 0, SEEK_SET) == -1) {
+				perror("lseek failed");
+				break;
+			}
 
-                        while (1) {
-				if((n = read(fdesc, recvBuffer, BUFFER_SIZE)) <= 0 && errno != EINTR) {
-					break;
-				}
-				while(errno == EINTR) {
-					sleep(1);
-					n = read(fdesc, recvBuffer, BUFFER_SIZE);
-				}
-				if(n <= 0) {
+			while (1) {
+				if ((n = read(fdesc, recvBuffer, BUFFER_SIZE)) <= 0) {
+					if (errno == EINTR) {
+						errno = 0;
+						continue;
+					}
 					break;
 				}
 
-                                for(int i = 0; i < n; i++) {
-                                        printf("%c", recvBuffer[i]);
-                                }
-                        }
+				for (int i = 0; i < n; i++) {
+					printf("%c", recvBuffer[i]);
+				}
+			}
 
-                        break;
-                }
+			break;
+		}
 
-                int v = scanf("%d", &idx);
-                if (v != 1 || idx < 0) {
-                        fprintf(stderr, "incorrect input\n");
-                        fflush(stdin);
-                        continue;
-                }
-                if (idx > linesCnt) {
-                        fprintf(stderr, "number should be <= %d\n",linesCnt);
-                        continue;
-                }
-                if (idx == 0) {
-                        printf("stopped\n");
-                        break;
-                }
-                if (lseek(fdesc, lines[idx - 1].offset, SEEK_SET) == -1) {
-                        perror("lseek failed");
+		int v = scanf("%d", &idx);
+		if (v != 1 || idx < 0) {
+			fprintf(stderr, "incorrect input\n");
+			fflush(stdin);
+			continue;
+		}
+		if (idx > linesCnt) {
+			fprintf(stderr, "number should be <= %d\n", linesCnt);
+			continue;
+		}
+		if (idx == 0) {
+			printf("stopped\n");
+			break;
+		}
+		if (lseek(fdesc, lines[idx - 1].offset, SEEK_SET) == -1) {
+			perror("lseek failed");
 			free(lines);
-			if(close(fdesc)) {
+			if (close(fdesc)) {
 				perror("closing file failed");
 				return -1;
 			}
 
-                        return -1;
-                }
-                int n;
-                int rest = lines[idx - 1].len;
+			return -1;
+		}
+		int n;
+		int rest = lines[idx - 1].len;
 
 		while (1) {
-			if((n = read(fdesc, recvBuffer, min(BUFFER_SIZE, rest))) <= 0 && errno != EINTR) {
-				break;
-			}
-			while(errno == EINTR) {
-				sleep(1);
-				n = read(fdesc, recvBuffer, min(BUFFER_SIZE, rest));
-			}
-			if(n <= 0) {
+			if ((n = read(fdesc, recvBuffer, min(BUFFER_SIZE, rest))) <= 0) {
+				if (errno == EINTR) {
+					errno = 0;
+					continue;
+				}
 				break;
 			}
 
-                        for (int i = 0; i < n; i++) {
-                                printf("%c", recvBuffer[i]);
-                        }
-                        rest -= n;
-                }
-        } while (1);
+			for (int i = 0; i < n; i++) {
+				printf("%c", recvBuffer[i]);
+			}
+			rest -= n;
+		}
+	} while (1);
 
-        free(lines);
-        if(close(fdesc)) {
-                perror("closing file failed");
-                return -1;
-        }
-        return 0;
+	free(lines);
+	if (close(fdesc)) {
+		perror("closing file failed");
+		return -1;
+	}
+	return 0;
 }
 
