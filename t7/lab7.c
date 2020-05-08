@@ -101,6 +101,7 @@ int main(int argc, char **argv) {
         int linesCnt = 0;
         Line* lines = buildTable(mappedFile, fileLen, &linesCnt);
         if(lines == NULL) {
+		munmap(mappedFile, fileLen);
                 return -1;
         }
         printf("lines = %d\n", linesCnt);
