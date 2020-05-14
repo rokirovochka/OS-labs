@@ -1,0 +1,5 @@
+This is text
+for child process.
+Thank you for
+your attention!
+
