@@ -16,6 +16,7 @@ int main(int argc, char **argv){
 	if (pid) {
 		int status;
 		do {
+			sleep(10);
 			pid_t chId = waitpid(pid, &status, 0);
 			if (chId == -1) {
 				perror("waitpid failed");
