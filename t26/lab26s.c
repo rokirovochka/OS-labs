@@ -12,10 +12,17 @@ int main(int argc, char **argv) {
 	for(int i=0; i<2; i++) {
 		if(fprintf(ptr, "%s", lines[i]) != strlen(lines[i])) {
 			perror("fprintf failed");
-			pclose(ptr);
+			if(pclose(ptr) == -1) {
+				perror("pclose failed");
+				return -1;
+			}
+
 			return -1;
 		}
 	}
-	pclose(ptr);
+	if(pclose(ptr) == -1) {
+		perror("pclose failed");
+		return -1;
+	}
 	return 0;
 }

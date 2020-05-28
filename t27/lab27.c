@@ -14,12 +14,20 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 	fout = popen("wc -l", "w");
+	if(fout == NULL) {
+		perror("popen failed");
+		return -1;
+	}
 	while (fgets(line, BUFFER_SIZE, fin) != NULL) {
 		if (line[0] == '\n') {
 			fputs(line, fout);
 		}
 	}
 	fclose(fin);
-	pclose(fout);
+	if(pclose(fout) == -1) {
+		perror("pclose failed");
+		return -1;
+	}
+
 	return 0;
 }
