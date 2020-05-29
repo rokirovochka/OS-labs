@@ -2,8 +2,8 @@
 #define BUFFER_SIZE 256
 
 int main(int argc, char **argv) {
-	if(argc < 2) {
-		fprintf(stderr, "usage: %s filename\n",argv[0]);
+	if (argc < 2) {
+		fprintf(stderr, "usage: %s filename\n", argv[0]);
 		return -1;
 	}
 
@@ -14,7 +14,7 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 	fout = popen("wc -l", "w");
-	if(fout == NULL) {
+	if (fout == NULL) {
 		perror("popen failed");
 		return -1;
 	}
@@ -23,8 +23,11 @@ int main(int argc, char **argv) {
 			fputs(line, fout);
 		}
 	}
-	fclose(fin);
-	if(pclose(fout) == -1) {
+	if (fclose(fin) == -1) {
+		perror("fclose failed");
+		return -1;
+	}
+	if (pclose(fout) == -1) {
 		perror("pclose failed");
 		return -1;
 	}

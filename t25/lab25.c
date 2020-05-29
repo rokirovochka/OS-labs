@@ -10,7 +10,7 @@
 
 int main(int argc, char **argv) {
 
-	int fd[2];	
+	int fd[2];
 	pid_t pidRecv, pidSend;
 	if (pipe(fd) == -1) {
 		perror("pipe failed");
@@ -19,21 +19,32 @@ int main(int argc, char **argv) {
 
 	pidSend = fork();
 	if (pidSend == 0) {
-		close(fd[1]);
+		if (close(fd[1]) == -1) {
+			perror("close failed");
+			return -1;
+		}
 		char *lines[2] = { "First Line\n", "Second Line\n" };
 		for (int i = 0; i < 2; i++) {
 			if (write(fd[0], lines[i], strlen(lines[i])) == -1) {
-				close(fd[0]);
+				if (close(fd[0]) == -1) {
+					perror("close failed");
+					return -1;
+				}
 				perror("write failed");
 				return -1;
 			}
 		}
-		close(fd[0]);
+		if (close(fd[0]) == -1) {
+			perror("close failed");
+			return -1;
+		}
 		return 0;
 	}
 	else if (pidSend == -1) {
-		close(fd[0]);
-		close(fd[1]);
+		if (close(fd[0]) == -1 || close(fd[1]) == -1) {
+			perror("close failed");
+			return -1;
+		}
 		perror("fork failed");
 		return -1;
 	}
@@ -41,7 +52,10 @@ int main(int argc, char **argv) {
 
 	pidRecv = fork();
 	if (pidRecv == 0) {
-		close(fd[0]);
+		if (close(fd[0]) == -1) {
+			perror("close failed");
+			return -1;
+		}
 		char buffer[BUFFER_SIZE];
 		int n;
 		while (1) {
@@ -56,7 +70,10 @@ int main(int argc, char **argv) {
 				buffer[i] = toupper(buffer[i]);
 			}
 			if (write(STDOUT_FILENO, buffer, n) == -1) {
-				close(fd[1]);
+				if (close(fd[1]) == -1) {
+					perror("close failed");
+					return -1;
+				}
 				perror("write failed");
 				return -1;
 			}
@@ -65,19 +82,25 @@ int main(int argc, char **argv) {
 		if (n == -1) {
 			perror("read failed");
 		}
-		close(fd[1]);
+		if (close(fd[1]) == -1) {
+			perror("close failed");
+			return -1;
+		}
 		return n;
 	}
 	else if (pidRecv == -1) {
-		close(fd[0]);
-		close(fd[1]);
+		if (close(fd[0]) == -1 || close(fd[1]) == -1) {
+			perror("close failed");
+			return -1;
+		}
 		perror("fork failed");
 		return -1;
 	}
-
-	close(fd[0]);
-	close(fd[1]);
-
+	
+	if (close(fd[0]) == -1 || close(fd[1]) == -1) {
+		perror("close failed");
+		return -1;
+	}
 	if (wait(NULL) == -1) {
 		perror("wait failed");
 	}
