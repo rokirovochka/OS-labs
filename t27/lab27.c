@@ -23,7 +23,7 @@ int main(int argc, char **argv) {
 			fputs(line, fout);
 		}
 	}
-	if (fclose(fin) == -1) {
+	if (fclose(fin) == EOF) {
 		perror("fclose failed");
 		return -1;
 	}
