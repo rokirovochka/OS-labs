@@ -1,4 +1,11 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+
+
 #define BUFFER_SIZE 256
 
 int main(int argc, char **argv) {
@@ -6,31 +13,23 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "usage: %s filename\n", argv[0]);
 		return -1;
 	}
+	char command[BUFFER_SIZE] = "cat ";
+	strcat(command, argv[1]);
+	strcat(command, " | grep ^$ | wc -l");
 
-	FILE *fin, *fout;
-	char line[BUFFER_SIZE];
-	if ((fin = fopen(argv[1], "r")) == NULL) {
-		perror("fopen failed");
-		return -1;
-	}
-	fout = popen("wc -l", "w");
-	if (fout == NULL) {
+	FILE* pin = popen(command, "r");
+	if (pin == NULL) {
 		perror("popen failed");
-		return -1;
 	}
-	while (fgets(line, BUFFER_SIZE, fin) != NULL) {
-		if (line[0] == '\n') {
-			fputs(line, fout);
-		}
+	int answer;
+	fscanf(pin, "%d", &answer);
+	
+	int status = pclose(pin);
+	
+	if (WIFEXITED(status) != 0 && WEXITSTATUS(status) == 0) {
+		printf("result: %d\n", answer);
+		return 0;
 	}
-	if (fclose(fin) == EOF) {
-		perror("fclose failed");
-		return -1;
-	}
-	if (pclose(fout) == -1) {
-		perror("pclose failed");
-		return -1;
-	}
-
-	return 0;
+	fprintf(stderr,"pclose status isn't normal");
+	return -1;
 }
