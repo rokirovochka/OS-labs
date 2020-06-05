@@ -14,8 +14,7 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 	char command[BUFFER_SIZE] = "cat ";
-	strcat(command, argv[1]);
-	strcat(command, " | grep ^$ | wc -l");
+	sprintf(command, "cat %s | grep ^$ | wc -l", argv[1]);
 
 	FILE* pin = popen(command, "r");
 	if (pin == NULL) {
