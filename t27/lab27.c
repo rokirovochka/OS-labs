@@ -25,10 +25,11 @@ int main(int argc, char **argv) {
 	
 	int status = pclose(pin);
 	
-	if (WIFEXITED(status) != 0 && WEXITSTATUS(status) == 0) {
-		printf("result: %d\n", answer);
-		return 0;
-	}
-	fprintf(stderr,"pclose status isn't normal");
-	return -1;
+	if (WIFEXITED(status) == 0 || WEXITSTATUS(status) != 0) {
+		fprintf(stderr,"Error with pclose status occured: status: %d", status);	
+		return -1;
+	}	
+	
+	printf("result: %d\n", answer);
+	return 0;
 }

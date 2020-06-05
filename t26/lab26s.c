@@ -23,9 +23,9 @@ int main(int argc, char **argv) {
 
 	int status = pclose(ptr);
 	
-	if (WIFEXITED(status) != 0 && WEXITSTATUS(status) == 0) {		
-		return 0;
-	}
-	fprintf(stderr,"Error with pclose status occured");
-	return -1;
+	if (WIFEXITED(status) == 0 || WEXITSTATUS(status) != 0) {
+		fprintf(stderr,"Error with pclose status occured: status: %d", status);		
+		return -1;
+	}	
+	return 0;
 }
