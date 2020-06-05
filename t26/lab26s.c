@@ -20,9 +20,12 @@ int main(int argc, char **argv) {
 			return -1;
 		}
 	}
-	if(pclose(ptr) == -1) {
-		perror("pclose failed");
-		return -1;
+
+	int status = pclose(ptr);
+	
+	if (WIFEXITED(status) != 0 && WEXITSTATUS(status) == 0) {		
+		return 0;
 	}
-	return 0;
+	fprintf(stderr,"Error with pclose status occured");
+	return -1;
 }
